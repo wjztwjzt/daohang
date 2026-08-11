@@ -1,0 +1,18 @@
+[Unit]
+Description=Telegram 频道资源导航搜索机器人
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/daohang
+Environment="PATH=/root/daohang/venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/root/daohang/venv/bin/python /root/daohang/bot.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/daohang-bot.log
+StandardError=append:/var/log/daohang-bot.log
+
+[Install]
+WantedBy=multi-user.target
