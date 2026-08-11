@@ -1,0 +1,5 @@
+python-telegram-bot[job-queue]>=20.0,<22.0
+telethon>=1.34,<2.0
+jieba>=0.42
+pypinyin>=0.49
+python-dotenv>=1.0
