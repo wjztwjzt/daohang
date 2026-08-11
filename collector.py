@@ -74,7 +74,7 @@ async def collect_channel(
                 continue
 
             # 跳过非资源类消息（无文本且无媒体）
-            msg_text = msg.message or msg.caption or ""
+            msg_text = msg.text or getattr(msg, 'caption', None) or ""
             if not msg_text.strip():
                 continue
 
