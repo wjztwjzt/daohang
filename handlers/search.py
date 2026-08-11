@@ -24,12 +24,6 @@ async def handle_text_search(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not query_text:
         return
 
-    # 投诉输入状态
-    if context.user_data.get("awaiting_complaint"):
-        from handlers.complaint import handle_complaint_text
-        await handle_complaint_text(update, context)
-        return
-
     # jieba 分词 → FTS5 前缀匹配
     tokens = list(dict.fromkeys(jieba.cut_for_search(query_text)))
     fts_query = " ".join(f"{t}*" for t in tokens if t.strip())

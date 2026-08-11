@@ -219,12 +219,10 @@ async def _send_search_more(update: Update) -> None:
 async def _send_complaint_menu(update: Update) -> None:
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup as IM
     await update.message.reply_text(
-        "请选择反馈类型：",
+        "💬 投诉建议\n\n"
+        "如有问题或建议，请直接联系 @shuangjiad_bot",
         reply_markup=IM([
-            [
-                InlineKeyboardButton("📝 提交建议", callback_data="c|t|suggestion"),
-                InlineKeyboardButton("⚠️ 投诉举报", callback_data="c|t|complaint"),
-            ],
+            [InlineKeyboardButton("💬 联系 @shuangjiad_bot", url="https://t.me/shuangjiad_bot")],
         ]),
     )
 
