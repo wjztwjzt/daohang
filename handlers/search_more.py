@@ -1,29 +1,19 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from config import (
-    SEARCH_GROUP_LINK,
-    SEARCH_GROUP_NAME,
-    SEARCH_BOT_LINK,
-    SEARCH_BOT_NAME,
-)
+from config import SEARCH_GROUP_LINK, SEARCH_GROUP_NAME
 from utils import encode_callback
 
 
 async def handle_search_more(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """处理搜索更多按钮 — 显示搜索群和双向机器人链接"""
+    """处理搜索更多按钮 — 显示搜索群链接"""
     query = update.callback_query
     await query.answer()
 
     await query.edit_message_text(
         "🔍 搜索更多资源\n\n"
-        "如果在机器人中找不到想要的资源，可以通过以下方式获取：",
+        "如果在机器人中找不到想要的资源，\n"
+        "请加入搜索群，在群中发送消息即可激活搜索。",
         reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    text=f"🤖 {SEARCH_BOT_NAME}",
-                    url=SEARCH_BOT_LINK,
-                ),
-            ],
             [
                 InlineKeyboardButton(
                     text=f"📢 加入{SEARCH_GROUP_NAME}",

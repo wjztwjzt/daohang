@@ -69,8 +69,6 @@ def get_channel(key: str) -> dict | None:
 # ── 外部链接 ──
 SEARCH_GROUP_LINK = _env_or("SEARCH_GROUP_LINK", "https://t.me/your_search_group")
 SEARCH_GROUP_NAME = _env_or("SEARCH_GROUP_NAME", "资源搜索互助群")
-SEARCH_BOT_LINK = _env_or("SEARCH_BOT_LINK", "https://t.me/your_search_bot")
-SEARCH_BOT_NAME = _env_or("SEARCH_BOT_NAME", "资源搜索机器人")
 
 # ── 代理配置 ──
 PROXY = None
