@@ -146,6 +146,43 @@ def get_resources_by_letter(
     return [dict(r) for r in rows], total
 
 
+def get_base_titles(
+    channel_key: str, letter: str, page: int = 0, page_size: int = 20
+) -> tuple[list[str], int]:
+    """获取某频道某字母下不重复的动漫基础名字（去集数），返回 (名字列表, 总数)"""
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT DISTINCT display_title FROM resources WHERE channel_key=? AND pinyin_first=? ORDER BY pinyin",
+            (channel_key, letter),
+        ).fetchall()
+    # Python 去重提取基础名字(去掉 第X集)
+    import re
+    seen = {}
+    for r in rows:
+        base = re.sub(r"第\d+集.*$", "", r["display_title"]).strip()
+        if base and base not in seen:
+            seen[base] = True
+    bases = list(seen.keys())
+    total = len(bases)
+    return bases[page * page_size: (page + 1) * page_size], total
+
+
+def get_resources_by_base_title(
+    channel_key: str, base_title: str, page: int = 0, page_size: int = 10
+) -> tuple[list[dict], int]:
+    """获取某个基础名字下的所有集数"""
+    with get_db() as db:
+        total = db.execute(
+            "SELECT COUNT(*) FROM resources WHERE channel_key=? AND display_title LIKE ?",
+            (channel_key, f"{base_title}%"),
+        ).fetchone()[0]
+        rows = db.execute(
+            "SELECT * FROM resources WHERE channel_key=? AND display_title LIKE ? ORDER BY pinyin LIMIT ? OFFSET ?",
+            (channel_key, f"{base_title}%", page_size, page * page_size),
+        ).fetchall()
+    return [dict(r) for r in rows], total
+
+
 def get_resource_by_id(resource_id: int) -> dict | None:
     with get_db() as db:
         row = db.execute("SELECT * FROM resources WHERE id=?", (resource_id,)).fetchone()

@@ -17,8 +17,6 @@ from handlers.menu import (
     start,
     handle_menu_callback,
     handle_reply_menu_text,
-    handle_res_callback,
-    handle_back_callback,
     on_channel_post,
 )
 from handlers.search import handle_text_search, handle_search_callback
@@ -87,11 +85,6 @@ def main() -> None:
         handle_menu_callback, pattern=r"^m\|",
     ))
 
-    # 回调：r| 前缀 → 资源详情
-    application.add_handler(CallbackQueryHandler(
-        handle_res_callback, pattern=r"^r\|",
-    ))
-
     # 回调：s| 前缀 → 搜索结果翻页
     application.add_handler(CallbackQueryHandler(
         handle_search_callback, pattern=r"^s\|",
@@ -100,11 +93,6 @@ def main() -> None:
     # 回调：c| 前缀 → 投诉建议
     application.add_handler(CallbackQueryHandler(
         handle_complaint_callback, pattern=r"^c\|",
-    ))
-
-    # 回调：back → 返回上一级
-    application.add_handler(CallbackQueryHandler(
-        handle_back_callback, pattern=r"^back$",
     ))
 
     # 回调：sm / h

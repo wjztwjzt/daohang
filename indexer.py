@@ -8,31 +8,27 @@ from config import CHANNELS
 def extract_title(msg_text: str) -> tuple[str, str]:
     """
     从消息文本中提取名字和显示标题。
+    优先从第一行提取，hashtag 只做备选。
 
     输入: "🎬 光阴之外第33集\n📖 跳过片头 2:10\n📺 状态：4K更新中\n🏷 #光阴之外"
     输出: ("光阴之外", "光阴之外 第33集")
     """
     text = msg_text.strip() if msg_text else ""
+    lines = text.split("\n")
+    first_line = lines[0].strip() if lines else ""
 
-    # 优先从 #hashtag 提取名字
-    tag_match = re.search(r"#(\S+)", text)
-    if tag_match:
-        title = tag_match.group(1)
-    else:
-        # 从第一行提取
-        first_line = text.split("\n")[0]
-        # 去掉行首 emoji 类字符
-        cleaned = re.sub(r"^[^\w一-鿿#]+", "", first_line).strip()
-        # 去掉 "第X集" 及后面的内容
-        title = re.sub(r"第\d+集.*$", "", cleaned).strip()
-        if not title:
-            title = cleaned
+    # 从第一行提取：去行首 emoji → 去 第X集 → 得到名字
+    cleaned = re.sub(r"^[^\w一-鿿#]+", "", first_line).strip()
+    title = re.sub(r"第\d+[集话期卷].*$", "", cleaned).strip()
 
-    # display_title: 第一行去掉行首符号
-    first_line = text.split("\n")[0]
-    display_title = re.sub(r"^[^\w一-鿿]+", "", first_line).strip()
-    if not display_title:
-        display_title = title
+    # 如果第一行提取失败（太短或为空），尝试 hashtag
+    if not title or len(title) < 1:
+        tag_match = re.search(r"#(\S+)", text)
+        if tag_match:
+            title = tag_match.group(1)
+
+    # display_title 始终用第一行
+    display_title = cleaned or title
 
     return title, display_title
 

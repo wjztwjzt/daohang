@@ -2,15 +2,13 @@ import hashlib
 import jieba
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from database import search_all_resources, get_resource_by_id
+from database import search_all_resources
 from utils import (
-    cb,
     parse_cb,
     build_search_results_keyboard,
-    build_resource_detail_keyboard,
     build_inline_main_menu,
 )
-from config import SEARCH_GROUP_LINK, SEARCH_GROUP_NAME, PAGE_SIZE, CHANNELS
+from config import SEARCH_GROUP_LINK, SEARCH_GROUP_NAME, PAGE_SIZE
 
 
 def _query_key(text: str) -> str:

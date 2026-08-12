@@ -1,6 +1,12 @@
+import hashlib
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from pypinyin import lazy_pinyin, Style
-from config import PAGE_SIZE, CHANNELS
+from config import PAGE_SIZE, CHANNELS, SEARCH_GROUP_LINK
+
+
+def hash_title(title: str) -> str:
+    """将标题哈希为 8 位短字符串，避免 callback_data 超过 64 字节"""
+    return hashlib.md5(title.encode()).hexdigest()[:8]
 
 
 # ── 拼音 ──
@@ -21,26 +27,24 @@ def build_message_link(channel_id: int, message_id: int) -> str:
     return f"https://t.me/c/{chat_id}/{message_id}"
 
 
-# ── 紧凑回调格式（杜绝 64 字节限制） ──
-# m|{ch}|a              → 字母选择页
-# m|{ch}|l|{letter}|{p} → 资源列表
-# r|{id}                → 资源详情（返回信息存在 user_data['nav']）
-# s|{key}|{p}           → 搜索结果翻页
-# c|start / c|t|{type} / c|cancel
-# sm                    → 搜索更多
-# h                     → 使用帮助
+# ── 紧凑回调格式 ──
+# m|{ch}|a               → 字母选择页
+# m|{ch}|l|{letter}|{p}  → 动漫名列表
+# m|{ch}|t|{letter}|{hash}|{p} → 集数列表
+# s|{key}|{p}            → 搜索结果翻页
+# c|start                → 投诉建议
+# sm                     → 搜索更多
+# h                      → 使用帮助
 
 def cb(*parts) -> str:
-    """构建回调数据，参数直接拼接"""
     return "|".join(str(p) for p in parts)
 
 
 def parse_cb(data: str) -> list[str]:
-    """解析回调数据，返回 parts 列表"""
     return data.split("|")
 
 
-# ── 底部键盘（ReplyKeyboardMarkup — 首页 6 按钮） ──
+# ── 底部键盘 ──
 
 def build_reply_main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
@@ -62,10 +66,9 @@ def build_reply_main_menu() -> ReplyKeyboardMarkup:
     )
 
 
-# ── 内联键盘（InlineKeyboardMarkup — 各级导航） ──
+# ── 内联键盘 ──
 
 def build_inline_main_menu() -> InlineKeyboardMarkup:
-    """内联版主菜单（作为 /start 消息的后备）"""
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -82,10 +85,10 @@ def build_inline_main_menu() -> InlineKeyboardMarkup:
                 text=f"{CHANNELS['youxiudianshiju']['emoji']} {CHANNELS['youxiudianshiju']['name']}",
                 callback_data=cb("m", "youxiudianshiju", "a"),
             ),
-            InlineKeyboardButton(text="🔍 搜索更多", callback_data="sm"),
+            InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
         ],
         [
-            InlineKeyboardButton(text="💬 投诉建议", callback_data="c|start"),
+            InlineKeyboardButton(text="💬 投诉建议", url="https://t.me/shuangjiad_bot"),
             InlineKeyboardButton(text="❓ 使用帮助", callback_data="h"),
         ],
     ])
@@ -106,25 +109,25 @@ def build_letters_keyboard(channel_key: str, letters: list[str]) -> InlineKeyboa
         buttons.append(row)
 
     buttons.append([
-        InlineKeyboardButton(text="🔍 搜索更多", callback_data="sm"),
+        InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
         InlineKeyboardButton(text="🏠 返回主菜单", callback_data="m|__home__"),
     ])
     return InlineKeyboardMarkup(buttons)
 
 
-def build_resource_list_keyboard(
-    channel_key: str, letter: str, resources: list[dict],
-    page: int, total: int, page_size: int = PAGE_SIZE,
+def build_anime_list_keyboard(
+    channel_key: str, letter: str, titles: list[str],
+    page: int, total: int, page_size: int = 20,
 ) -> InlineKeyboardMarkup:
-    total_pages = (total + page_size - 1) // page_size
+    """动漫名列表键盘"""
+    total_pages = max(1, (total + page_size - 1) // page_size)
     buttons = []
 
-    for i, res in enumerate(resources):
+    for i, t in enumerate(titles):
         idx = page * page_size + i + 1
-        # 返回信息存 user_data['nav']，回调只传资源 ID
         buttons.append([InlineKeyboardButton(
-            text=f"{idx}. {res['display_title']}",
-            callback_data=cb("r", res["id"]),
+            text=f"{idx}. {t}",
+            callback_data=cb("m", channel_key, "t", letter, hash_title(t), "0"),
         )])
 
     nav_row = []
@@ -142,7 +145,7 @@ def build_resource_list_keyboard(
         buttons.append(nav_row)
 
     buttons.append([
-        InlineKeyboardButton(text="🔍 搜索更多", callback_data="sm"),
+        InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
         InlineKeyboardButton(text="⬅ 返回字母", callback_data=cb("m", channel_key, "a")),
     ])
     buttons.append([
@@ -151,22 +154,54 @@ def build_resource_list_keyboard(
     return InlineKeyboardMarkup(buttons)
 
 
-def build_resource_detail_keyboard(message_link: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(text="🔗 跳转到频道消息", url=message_link)],
-        [
-            InlineKeyboardButton(text="⬅ 返回", callback_data="back"),
-            InlineKeyboardButton(text="🔍 搜索更多", callback_data="sm"),
-        ],
-        [InlineKeyboardButton(text="🏠 返回主菜单", callback_data="m|__home__")],
+def build_episode_list_keyboard(
+    channel_key: str, letter: str, base_title: str,
+    resources: list[dict], page: int, total: int,
+    page_size: int = PAGE_SIZE,
+) -> InlineKeyboardMarkup:
+    """集数列表键盘 — 每个按钮是 URL 直接跳转频道消息"""
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    buttons = []
+
+    for i, res in enumerate(resources):
+        idx = page * page_size + i + 1
+        buttons.append([InlineKeyboardButton(
+            text=f"{idx}. {res['display_title']}",
+            url=res["message_link"],
+        )])
+
+    title_hash = hash_title(base_title)
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton(
+            text="⬅ 上一页",
+            callback_data=cb("m", channel_key, "t", letter, title_hash, str(page - 1)),
+        ))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton(
+            text="➡ 下一页",
+            callback_data=cb("m", channel_key, "t", letter, title_hash, str(page + 1)),
+        ))
+    if nav_row:
+        buttons.append(nav_row)
+
+    buttons.append([
+        InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
+        InlineKeyboardButton(text="⬅ 返回动漫列表",
+                             callback_data=cb("m", channel_key, "l", letter, "0")),
     ])
+    buttons.append([
+        InlineKeyboardButton(text="🏠 返回主菜单", callback_data="m|__home__"),
+    ])
+    return InlineKeyboardMarkup(buttons)
 
 
 def build_search_results_keyboard(
     query_key: str, results: list[dict], page: int, total: int,
     page_size: int = PAGE_SIZE,
 ) -> InlineKeyboardMarkup:
-    total_pages = (total + page_size - 1) // page_size
+    """搜索结果键盘 — 每项直接 URL 跳转"""
+    total_pages = max(1, (total + page_size - 1) // page_size)
     buttons = []
 
     for i, res in enumerate(results):
@@ -174,7 +209,7 @@ def build_search_results_keyboard(
         emoji = CHANNELS.get(res["channel_key"], {}).get("emoji", "")
         buttons.append([InlineKeyboardButton(
             text=f"{idx}. [{emoji}] {res['display_title']}",
-            callback_data=cb("r", res["id"]),
+            url=res["message_link"],
         )])
 
     nav_row = []
