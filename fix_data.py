@@ -3,6 +3,7 @@ import re
 import jieba
 from pypinyin import lazy_pinyin, Style
 from database import get_db
+from utils import normalize_base_title
 
 
 def fix_all() -> None:
@@ -13,8 +14,8 @@ def fix_all() -> None:
 
         for r in rows:
             dt = r["display_title"]
-            # 重新提取基础标题（不依赖 hashtag）
-            new_title = re.sub(r"第\d+[集话期卷].*$", "", dt).strip()
+            # 重新提取基础标题（去 hashtag + 去中英文集数后缀）
+            new_title = normalize_base_title(dt)
             if not new_title:
                 new_title = dt
 

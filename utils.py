@@ -1,4 +1,5 @@
 import hashlib
+import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from pypinyin import lazy_pinyin, Style
 from config import PAGE_SIZE, CHANNELS, SEARCH_GROUP_LINK
@@ -7,6 +8,29 @@ from config import PAGE_SIZE, CHANNELS, SEARCH_GROUP_LINK
 def hash_title(title: str) -> str:
     """将标题哈希为 8 位短字符串，避免 callback_data 超过 64 字节"""
     return hashlib.md5(title.encode()).hexdigest()[:8]
+
+
+# 中文数字（用于识别 第X集 中的中文数字，如 第一百六十一集）
+_CN_NUM = "零一二三四五六七八九十百千万两"
+
+
+def normalize_base_title(text: str) -> str:
+    """提取基础动漫名：去行首符号 → 去 hashtag 标签 → 去集数后缀（中/英数字）。
+
+    例如：
+      "遮天"                → "遮天"
+      "遮天 #动漫"          → "遮天"
+      "遮天第一百六十一集"  → "遮天"
+      "光阴之外第33集"      → "光阴之外"
+    """
+    t = (text or "").strip()
+    # 去行首 emoji / 标点
+    t = re.sub(r"^[^\w一-鿿#]+", "", t).strip()
+    # 去结尾 hashtag 标签（#动漫、#标签 等）
+    t = re.sub(r"#\S+", "", t).strip()
+    # 去集数后缀：第123集 / 第一百六十一集 / 第2话 / 第3期 / 第4卷
+    t = re.sub(rf"第[0-9{_CN_NUM}]+[集话期卷回].*$", "", t).strip()
+    return t
 
 
 # ── 拼音 ──

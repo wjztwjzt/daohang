@@ -149,20 +149,21 @@ def get_resources_by_letter(
 def get_base_titles(
     channel_key: str, letter: str, page: int = 0, page_size: int = 20
 ) -> tuple[list[str], int]:
-    """获取某频道某字母下不重复的动漫基础名字（去集数），返回 (名字列表, 总数)"""
+    """获取某频道某字母下不重复的动漫基础名字（去集数/hashtag），返回 (名字列表, 总数)"""
+    from utils import normalize_base_title
+    from pypinyin import lazy_pinyin, Style
     with get_db() as db:
         rows = db.execute(
-            "SELECT DISTINCT display_title FROM resources WHERE channel_key=? AND pinyin_first=? ORDER BY pinyin",
+            "SELECT DISTINCT display_title FROM resources WHERE channel_key=? AND pinyin_first=?",
             (channel_key, letter),
         ).fetchall()
-    # Python 去重提取基础名字(去掉 第X集)
-    import re
+    # 归一化去重：同一部剧的不同集数/hashtag 归并为一个基础名字
     seen = {}
     for r in rows:
-        base = re.sub(r"第\d+集.*$", "", r["display_title"]).strip()
+        base = normalize_base_title(r["display_title"])
         if base and base not in seen:
             seen[base] = True
-    bases = list(seen.keys())
+    bases = sorted(seen.keys(), key=lambda t: "".join(lazy_pinyin(t, style=Style.NORMAL)))
     total = len(bases)
     return bases[page * page_size: (page + 1) * page_size], total
 

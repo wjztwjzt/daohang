@@ -3,6 +3,7 @@ import jieba
 from pypinyin import lazy_pinyin, Style
 from database import insert_resource
 from config import CHANNELS
+from utils import normalize_base_title
 
 
 def extract_title(msg_text: str) -> tuple[str, str]:
@@ -17,12 +18,12 @@ def extract_title(msg_text: str) -> tuple[str, str]:
     lines = text.split("\n")
     first_line = lines[0].strip() if lines else ""
 
-    # 从第一行提取：去行首 emoji → 去 第X集 → 得到名字
+    # 从第一行提取：去行首 emoji → 去 hashtag/集数后缀 → 得到名字
     cleaned = re.sub(r"^[^\w一-鿿#]+", "", first_line).strip()
-    title = re.sub(r"第\d+[集话期卷].*$", "", cleaned).strip()
+    title = normalize_base_title(cleaned)
 
     # 如果第一行提取失败（太短或为空），尝试 hashtag
-    if not title or len(title) < 1:
+    if not title:
         tag_match = re.search(r"#(\S+)", text)
         if tag_match:
             title = tag_match.group(1)
