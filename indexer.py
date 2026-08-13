@@ -60,8 +60,11 @@ def index_message(
     # 拼音从原始标题计算
     pinyin, pinyin_first = get_pinyin_info(orig_title)
 
-    # jieba 分词后空格连接，存入 FTS5 以支持中文搜索
-    title_fts = " ".join(jieba.cut_for_search(orig_title))
+    # jieba 分词后空格连接，基础名 + 完整标题都入 FTS5，
+    # 这样搜「九门」或「九门第24集」都能命中
+    title_fts = " ".join(jieba.cut_for_search(orig_title)) + " " + " ".join(
+        jieba.cut_for_search(display_title)
+    )
 
     result = insert_resource(
         channel_key=channel_key,

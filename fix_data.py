@@ -24,8 +24,10 @@ def fix_all() -> None:
             first_letters = "".join(lazy_pinyin(new_title, style=Style.FIRST_LETTER))
             first = first_letters[0].upper() if first_letters and first_letters[0].isalpha() else "#"
 
-            # jieba 分词
-            title_fts = " ".join(jieba.cut_for_search(new_title))
+            # jieba 分词：基础名 + 完整标题都入 FTS5
+            title_fts = " ".join(jieba.cut_for_search(new_title)) + " " + " ".join(
+                jieba.cut_for_search(dt)
+            )
 
             # 更新
             db.execute(
