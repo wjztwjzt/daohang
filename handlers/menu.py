@@ -46,7 +46,7 @@ async def handle_reply_menu_text(update: Update, context: ContextTypes.DEFAULT_T
     if text == "🔍 搜索更多":
         await _send_search_more(update)
         return
-    if text == "💬 投诉建议":
+    if text == "📤 提交投稿":
         await _send_complaint_menu(update)
         return
     if text == "❓ 使用帮助":
@@ -164,9 +164,9 @@ async def _send_search_more(update: Update) -> None:
 
 async def _send_complaint_menu(update: Update) -> None:
     await update.message.reply_text(
-        "💬 点击下方按钮联系客服 👇",
+        "📤 点击下方按钮提交投稿 👇",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("💬 联系客服", url=COMPLAINT_BOT_LINK)]
+            [InlineKeyboardButton("📤 提交投稿", url=COMPLAINT_BOT_LINK)]
         ]),
     )
 
@@ -176,7 +176,7 @@ async def _send_help(update: Update) -> None:
         "📖 使用帮助\n\n"
         "🔍 搜索：直接输入动漫名或拼音即可搜索\n\n"
         "📂 菜单：底部频道按钮 → 拼音首字母 → 动漫名 → 集数链接\n\n"
-        "💬 投诉建议：点击底部按钮联系客服",
+        "📤 提交投稿：点击底部按钮提交你的资源投稿",
         reply_markup=build_reply_main_menu(),
     )
 

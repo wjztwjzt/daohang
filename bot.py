@@ -33,7 +33,7 @@ async def handle_help_cb(update: Update, context) -> None:
         "📖 使用帮助\n\n"
         "🔍 搜索：直接输入动漫名或拼音即可搜索\n\n"
         "📂 菜单：点击底部频道按钮 → 拼音首字母 → 资源列表 → 跳转频道消息\n\n"
-        "💬 投诉建议：点击底部按钮提交反馈\n\n"
+        "📤 提交投稿：点击底部按钮提交你的资源投稿\n\n"
         "🔍 搜索更多：加入搜索群获取帮助",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🏠 返回主菜单", callback_data="m|__home__")],
@@ -47,7 +47,7 @@ async def handle_text(update: Update, context) -> None:
 
     # 底部按钮文字
     menu_texts = {"🔥 燃魂动漫", "🎁 每日福利", "📺 优秀电视剧",
-                  "🔍 搜索更多", "💬 投诉建议", "❓ 使用帮助"}
+                  "🔍 搜索更多", "📤 提交投稿", "❓ 使用帮助"}
     if text in menu_texts:
         from handlers.menu import handle_reply_menu_text
         await handle_reply_menu_text(update, context)
@@ -90,7 +90,7 @@ def main() -> None:
         handle_search_callback, pattern=r"^s\|",
     ))
 
-    # 回调：c| 前缀 → 投诉建议
+    # 回调：c| 前缀 → 提交投稿
     application.add_handler(CallbackQueryHandler(
         handle_complaint_callback, pattern=r"^c\|",
     ))

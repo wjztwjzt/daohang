@@ -56,7 +56,7 @@ def build_message_link(channel_id: int, message_id: int) -> str:
 # m|{ch}|l|{letter}|{p}  → 动漫名列表
 # m|{ch}|t|{letter}|{hash}|{p} → 集数列表
 # s|{key}|{p}            → 搜索结果翻页
-# c|start                → 投诉建议
+# c|start                → 提交投稿
 # sm                     → 搜索更多
 # h                      → 使用帮助
 
@@ -82,7 +82,7 @@ def build_reply_main_menu() -> ReplyKeyboardMarkup:
                 KeyboardButton("🔍 搜索更多"),
             ],
             [
-                KeyboardButton("💬 投诉建议"),
+                KeyboardButton("📤 提交投稿"),
                 KeyboardButton("❓ 使用帮助"),
             ],
         ],
@@ -112,7 +112,7 @@ def build_inline_main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
         ],
         [
-            InlineKeyboardButton(text="💬 投诉建议", url=COMPLAINT_BOT_LINK),
+            InlineKeyboardButton(text="📤 提交投稿", url=COMPLAINT_BOT_LINK),
             InlineKeyboardButton(text="❓ 使用帮助", callback_data="h"),
         ],
     ])
