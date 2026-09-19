@@ -18,7 +18,7 @@ from utils import (
     build_anime_list_keyboard,
     build_episode_list_keyboard,
 )
-from config import CHANNELS, PAGE_SIZE
+from config import CHANNELS, PAGE_SIZE, COMPLAINT_BOT_LINK
 
 _MAIN_BTN_MAP = {
     f"{ch['emoji']} {ch['name']}": ch["key"]
@@ -166,7 +166,7 @@ async def _send_complaint_menu(update: Update) -> None:
     await update.message.reply_text(
         "💬 点击下方按钮联系客服 👇",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("💬 联系客服", url="https://t.me/shuangjiad_bot")]
+            [InlineKeyboardButton("💬 联系客服", url=COMPLAINT_BOT_LINK)]
         ]),
     )
 

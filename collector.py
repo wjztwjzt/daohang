@@ -1,5 +1,5 @@
 """
-历史消息收集脚本 — 使用 Telethon 一次性收集三个频道的历史消息。
+历史消息收集脚本 — 使用 Telethon 一次性收集所有配置频道的历史消息。
 
 用法:
   python collector.py                     # 收集所有频道
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         "--channel", "-c",
         type=str,
         default="",
-        help="指定频道 key（ranhun/meirifuli/youxiudianshiju）",
+        help=f"指定频道 key（{'/'.join(CHANNELS.keys())}）",
     )
     parser.add_argument(
         "--limit", "-l",

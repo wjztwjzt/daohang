@@ -2,7 +2,7 @@ import hashlib
 import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from pypinyin import lazy_pinyin, Style
-from config import PAGE_SIZE, CHANNELS, SEARCH_GROUP_LINK
+from config import PAGE_SIZE, CHANNELS, SEARCH_GROUP_LINK, COMPLAINT_BOT_LINK
 
 
 def hash_title(title: str) -> str:
@@ -112,7 +112,7 @@ def build_inline_main_menu() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🔍 搜索更多", url=SEARCH_GROUP_LINK),
         ],
         [
-            InlineKeyboardButton(text="💬 投诉建议", url="https://t.me/shuangjiad_bot"),
+            InlineKeyboardButton(text="💬 投诉建议", url=COMPLAINT_BOT_LINK),
             InlineKeyboardButton(text="❓ 使用帮助", callback_data="h"),
         ],
     ])

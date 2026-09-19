@@ -50,6 +50,28 @@ CHANNELS = {
         "name": "优秀电视剧",
         "emoji": "📺",
     },
+    # ── 2026-09 新增三个频道（仅收录 + 搜索，不进菜单/底部按钮） ──
+    "guochan": {
+        "key": "guochan",
+        "id": int(os.getenv("CHANNEL_GUOCHAN_ID", "0")),
+        "username": _env_or("CHANNEL_GUOCHAN_USERNAME", "@jaceav"),
+        "name": "国产",
+        "emoji": "🇨🇳",
+    },
+    "oumei": {
+        "key": "oumei",
+        "id": int(os.getenv("CHANNEL_OUMEI_ID", "0")),
+        "username": _env_or("CHANNEL_OUMEI_USERNAME", "@jaavyjn"),
+        "name": "欧美",
+        "emoji": "🌍",
+    },
+    "dianying": {
+        "key": "dianying",
+        "id": int(os.getenv("CHANNEL_DIANYING_ID", "0")),
+        "username": _env_or("CHANNEL_DIANYING_USERNAME", "@dianyingab"),
+        "name": "电影",
+        "emoji": "🎬",
+    },
 }
 
 # channel_id -> channel_key 反向映射
@@ -69,6 +91,10 @@ def get_channel(key: str) -> dict | None:
 # ── 外部链接 ──
 SEARCH_GROUP_LINK = _env_or("SEARCH_GROUP_LINK", "https://t.me/your_search_group")
 SEARCH_GROUP_NAME = _env_or("SEARCH_GROUP_NAME", "资源搜索互助群")
+
+# 客服/双向机器人
+COMPLAINT_BOT_LINK = _env_or("COMPLAINT_BOT_LINK", "https://t.me/chuanbotbot")
+COMPLAINT_BOT_NAME = _env_or("COMPLAINT_BOT_NAME", "@chuanbotbot")
 
 # ── 代理配置 ──
 PROXY = None

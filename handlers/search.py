@@ -1,8 +1,7 @@
 import hashlib
-import jieba
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from database import search_all_resources
+from database import search_all_resources_fuzzy
 from utils import (
     parse_cb,
     build_search_results_keyboard,
@@ -17,20 +16,12 @@ def _query_key(text: str) -> str:
 
 
 async def handle_text_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """用户直接输入文字 → 搜索"""
+    """用户直接输入文字 → 搜索（精确/前缀优先，模糊补充）"""
     query_text = update.message.text.strip()
     if not query_text:
         return
 
-    # jieba 分词 → FTS5 前缀匹配
-    tokens = list(dict.fromkeys(jieba.cut_for_search(query_text)))
-    fts_query = " ".join(f"{t}*" for t in tokens if t.strip())
-
-    if not fts_query:
-        await update.message.reply_text("请输入有效的搜索关键词。")
-        return
-
-    results, total = search_all_resources(fts_query, 0)
+    results, total = search_all_resources_fuzzy(query_text, 0)
 
     if not results:
         await update.message.reply_text(
@@ -44,8 +35,8 @@ async def handle_text_search(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     qkey = _query_key(query_text)
 
-    # 缓存 FTS 查询信息
-    context.user_data[f"s_{qkey}"] = {"fts": fts_query, "total": total, "text": query_text}
+    # 缓存搜索词（翻页时重新执行模糊搜索）
+    context.user_data[f"s_{qkey}"] = {"text": query_text, "total": total}
     context.user_data["nav"] = ("search", qkey, 0)
 
     total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
@@ -74,7 +65,7 @@ async def _show_search_results(query, context, qkey: str, page: int) -> None:
                                        reply_markup=build_inline_main_menu())
         return
 
-    results, _ = search_all_resources(cached["fts"], page)
+    results, _ = search_all_resources_fuzzy(cached["text"], page)
     if not results:
         await query.edit_message_text("翻页数据为空。",
                                        reply_markup=build_inline_main_menu())

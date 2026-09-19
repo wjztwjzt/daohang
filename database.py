@@ -216,6 +216,118 @@ def search_all_resources(query: str, page: int = 0, page_size: int = 10) -> tupl
     return search_resources(query, page, page_size)
 
 
+def _edit_distance(a: str, b: str) -> int:
+    """纯 Python Levenshtein 编辑距离，用于模糊匹配"""
+    if a == b:
+        return 0
+    la, lb = len(a), len(b)
+    if la == 0:
+        return lb
+    if lb == 0:
+        return la
+    # 让 a 为较短串，节省内存
+    if la > lb:
+        a, b = b, a
+        la, lb = lb, la
+    prev = list(range(lb + 1))
+    for i in range(1, la + 1):
+        curr = [i] + [0] * lb
+        ai = a[i - 1]
+        for j in range(1, lb + 1):
+            cost = 0 if ai == b[j - 1] else 1
+            curr[j] = min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost)
+        prev = curr
+    return prev[lb]
+
+
+def _fts_search_rows(fts_query: str) -> list[dict]:
+    """FTS5 精确/前缀匹配，返回按 rank 排序的全部命中行（未分页）"""
+    with get_db() as db:
+        try:
+            rows = db.execute(
+                """SELECT r.* FROM resources_fts fts
+                   JOIN resources r ON r.id = fts.rowid
+                   WHERE resources_fts MATCH ?
+                   ORDER BY rank""",
+                (fts_query,),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            return []
+    return [dict(r) for r in rows]
+
+
+def search_all_resources_fuzzy(
+    query_text: str, page: int = 0, page_size: int = 10
+) -> tuple[list[dict], int]:
+    """模糊搜索：FTS 精确/前缀匹配优先，编辑距离命中的补充在后。
+
+    支持「错一个字 / 漏一个字」也能命中，全匹配永远排前面。
+    """
+    import jieba
+    from utils import normalize_base_title
+
+    query = (query_text or "").strip()
+    if not query:
+        return [], 0
+
+    merged: list[dict] = []
+    seen_ids: set[int] = set()
+
+    # 1) FTS 精确/前缀匹配（优先展示）
+    tokens = list(dict.fromkeys(jieba.cut_for_search(query)))
+    fts_query = " ".join(f"{t}*" for t in tokens if t.strip())
+    if fts_query:
+        for row in _fts_search_rows(fts_query):
+            if row["id"] not in seen_ids:
+                seen_ids.add(row["id"])
+                merged.append(row)
+
+    # 2) 编辑距离模糊匹配（错字/漏字）
+    #    单字不做模糊（误匹配过多），短词容错 1，长词容错 2
+    qlen = len(query)
+    if qlen <= 1:
+        threshold = 0
+    elif qlen <= 3:
+        threshold = 1
+    else:
+        threshold = 2
+
+    if threshold:
+        q_norm = query.lower().replace(" ", "")
+        with get_db() as db:
+            distinct = db.execute(
+                "SELECT DISTINCT display_title FROM resources"
+            ).fetchall()
+
+        matched: list[tuple[int, str]] = []
+        for r in distinct:
+            base = normalize_base_title(r["display_title"])
+            if not base:
+                continue
+            b_norm = base.lower().replace(" ", "")
+            dist = _edit_distance(q_norm, b_norm)
+            if dist <= threshold:
+                matched.append((dist, base))
+
+        matched.sort(key=lambda x: (x[0], x[1]))  # 距离小的优先
+
+        for dist, base in matched:
+            with get_db() as db:
+                rows = db.execute(
+                    "SELECT * FROM resources WHERE display_title LIKE ? ORDER BY pinyin",
+                    (f"{base}%",),
+                ).fetchall()
+            for r in rows:
+                d = dict(r)
+                if d["id"] not in seen_ids:
+                    seen_ids.add(d["id"])
+                    merged.append(d)
+
+    total = len(merged)
+    start = page * page_size
+    return merged[start:start + page_size], total
+
+
 def insert_resource(
     channel_key: str,
     message_id: int,
